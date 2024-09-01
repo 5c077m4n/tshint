@@ -1,0 +1,26 @@
+---
+name: CI
+
+# yamllint disable-line rule:truthy
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  golangci-lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: "go.sum"
+          go-version-file: "go.mod"
+      - uses: golangci/golangci-lint-action@v6
