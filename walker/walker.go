@@ -12,28 +12,6 @@ import (
 
 var parser = treesitter.NewParser()
 
-func visit(node *treesitter.Node, source []byte) error {
-	if node == nil || node.IsNull() {
-		return nil
-	}
-
-	slog.Info(
-		"node",
-		"value", node,
-		"type", node.Type(),
-		"content", node.Content(source),
-		"# of children", node.ChildCount(),
-	)
-	for i := 0; i < int(node.ChildCount()); i++ {
-		child := node.Child(i)
-		if err := visit(child, source); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 var ErrWalk = errors.New("failed to walk the AST")
 
 func Walk(sourceCode []byte) error {
@@ -47,9 +25,13 @@ func Walk(sourceCode []byte) error {
 		return errors.Join(ErrWalk, err)
 	}
 
-	root := tree.RootNode()
-	if err := visit(root, sourceCode); err != nil {
-		return errors.Join(ErrWalk, err)
+	for n := range TreeLeafIter(tree) {
+		slog.Info(
+			"node",
+			// "value", n,
+			// "type", n.Type(),
+			"content", n.Content(sourceCode),
+		)
 	}
 
 	return nil
