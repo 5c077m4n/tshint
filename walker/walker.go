@@ -39,7 +39,7 @@ var ErrWalk = errors.New("failed to walk the AST")
 func Walk(sourceCode []byte) error {
 	parser.SetLanguage(typescript.GetLanguage())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	tree, err := parser.ParseCtx(ctx, nil, sourceCode)

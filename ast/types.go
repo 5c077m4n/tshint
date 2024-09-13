@@ -3,19 +3,6 @@ package ast
 
 import "errors"
 
-type Visitor interface {
-	VisitNumber(*Number) error
-	VisitBoolean(*Boolean) error
-	VisitString(*String) error
-	VisitNull(*Null) error
-	VisitUndefined(*Undefined) error
-	VisitAny(*Any) error
-	VisitUnknown(*Unknown) error
-	VisitNever(*Never) error
-	VisitUnion(*Union) error
-	VisitIntersection(*Intersection) error
-}
-
 // TSType common functions for all types
 type TSType interface {
 	IsNil() bool
@@ -137,8 +124,8 @@ func (n *Never) Accept(v Visitor) error {
 
 // Union discriminated union type (`|`)
 type Union struct {
-	Left  *TSType
-	Right *TSType
+	Left  uint
+	Right uint
 }
 
 // IsNil nil check
@@ -153,8 +140,8 @@ func (u *Union) Accept(v Visitor) error {
 
 // Intersection type (`&`)
 type Intersection struct {
-	Left  *TSType
-	Right *TSType
+	Left  uint
+	Right uint
 }
 
 // IsNil nil check
