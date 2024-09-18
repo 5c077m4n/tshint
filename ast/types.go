@@ -18,8 +18,30 @@ func wrapAcceptErr(err error) error {
 	return nil
 }
 
+type Location struct {
+	Start [2]uint // [line, column]
+	End   [2]uint // [line, column]
+}
+
+// Program tree root
+type Program struct {
+	Children []TSType
+}
+
+// IsNil nil check
+func (p *Program) IsNil() bool {
+	return p == nil
+}
+
+// Accept visitor fn
+func (p *Program) Accept(v Visitor) error {
+	return wrapAcceptErr(v.VisitProgram(p))
+}
+
 // Number number type
-type Number struct{}
+type Number struct {
+	Location
+}
 
 // IsNil nil check
 func (n *Number) IsNil() bool {
@@ -32,7 +54,9 @@ func (n *Number) Accept(v Visitor) error {
 }
 
 // Boolean bool type
-type Boolean struct{}
+type Boolean struct {
+	Location
+}
 
 // IsNil nil check
 func (b *Boolean) IsNil() bool {
@@ -45,7 +69,9 @@ func (b *Boolean) Accept(v Visitor) error {
 }
 
 // String string type
-type String struct{}
+type String struct {
+	Location
+}
 
 // IsNil nil check
 func (s *String) IsNil() bool {
@@ -58,7 +84,9 @@ func (s *String) Accept(v Visitor) error {
 }
 
 // Null `null` type
-type Null struct{}
+type Null struct {
+	Location
+}
 
 // IsNil nil check
 func (n *Null) IsNil() bool {
@@ -71,7 +99,9 @@ func (n *Null) Accept(v Visitor) error {
 }
 
 // Undefined `undefined` type
-type Undefined struct{}
+type Undefined struct {
+	Location
+}
 
 // IsNil nil check
 func (u *Undefined) IsNil() bool {
@@ -84,7 +114,9 @@ func (u *Undefined) Accept(v Visitor) error {
 }
 
 // Any `any` type
-type Any struct{}
+type Any struct {
+	Location
+}
 
 // IsNil nil check
 func (a *Any) IsNil() bool {
@@ -97,7 +129,9 @@ func (a *Any) Accept(v Visitor) error {
 }
 
 // Unknown `unknown` type
-type Unknown struct{}
+type Unknown struct {
+	Location
+}
 
 // IsNil nil check
 func (u *Unknown) IsNil() bool {
@@ -110,7 +144,9 @@ func (u *Unknown) Accept(v Visitor) error {
 }
 
 // Never `never` type
-type Never struct{}
+type Never struct {
+	Location
+}
 
 // IsNil nil check
 func (n *Never) IsNil() bool {
@@ -126,6 +162,7 @@ func (n *Never) Accept(v Visitor) error {
 type Union struct {
 	Left  TSType
 	Right TSType
+	Location
 }
 
 // IsNil nil check
@@ -142,6 +179,7 @@ func (u *Union) Accept(v Visitor) error {
 type Intersection struct {
 	Left  TSType
 	Right TSType
+	Location
 }
 
 // IsNil nil check
@@ -152,4 +190,22 @@ func (i *Intersection) IsNil() bool {
 // Accept visitor fn
 func (i *Intersection) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitIntersection(i))
+}
+
+// Function func type
+type Function struct {
+	Inputs  []TSType
+	Output  TSType
+	IsArrow bool
+	Location
+}
+
+// IsNil nil check
+func (f *Function) IsNil() bool {
+	return f == nil
+}
+
+// Accept visitor fn
+func (f *Function) Accept(v Visitor) error {
+	return wrapAcceptErr(v.VisitFunction(f))
 }

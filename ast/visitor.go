@@ -1,6 +1,7 @@
 package ast
 
 type Visitor interface {
+	VisitProgram(*Program) error
 	VisitNumber(*Number) error
 	VisitBoolean(*Boolean) error
 	VisitString(*String) error
@@ -11,4 +12,5 @@ type Visitor interface {
 	VisitNever(*Never) error
 	VisitUnion(*Union) error
 	VisitIntersection(*Intersection) error
+	VisitFunction(*Function) error
 }
