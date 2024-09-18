@@ -124,8 +124,8 @@ func (n *Never) Accept(v Visitor) error {
 
 // Union discriminated union type (`|`)
 type Union struct {
-	Left  uint
-	Right uint
+	Left  TSType
+	Right TSType
 }
 
 // IsNil nil check
@@ -140,8 +140,8 @@ func (u *Union) Accept(v Visitor) error {
 
 // Intersection type (`&`)
 type Intersection struct {
-	Left  uint
-	Right uint
+	Left  TSType
+	Right TSType
 }
 
 // IsNil nil check
