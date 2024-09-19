@@ -1,9 +1,9 @@
-package walker
+package lexer
 
 import (
 	"context"
 	"errors"
-	"log/slog"
+	"iter"
 	"time"
 
 	treesitter "github.com/smacker/go-tree-sitter"
@@ -16,25 +16,16 @@ var parser = func() *treesitter.Parser {
 	return p
 }()
 
-var ErrWalk = errors.New("failed to walk the AST")
+var ErrTokenize = errors.New("failed to tokenize the input")
 
-func Walk(sourceCode []byte) error {
+func Tokenize(sourceCode []byte) (iter.Seq[*treesitter.Node], error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	tree, err := parser.ParseCtx(ctx, nil, sourceCode)
 	if err != nil {
-		return errors.Join(ErrWalk, err)
+		return nil, errors.Join(ErrTokenize, err)
 	}
 
-	for n := range TreeLeafIter(tree) {
-		slog.Info(
-			"node",
-			// "value", n,
-			// "type", n.Type(),
-			"content", n.Content(sourceCode),
-		)
-	}
-
-	return nil
+	return TreeLeafIter(tree), nil
 }
