@@ -3,29 +3,43 @@ package lexer
 import (
 	"context"
 	"errors"
-	"iter"
+	"log/slog"
 	"time"
 
-	treesitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/typescript/typescript"
+	treesitter "github.com/tree-sitter/go-tree-sitter"
+	treesitterTypescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
 )
-
-var parser = func() *treesitter.Parser {
-	p := treesitter.NewParser()
-	p.SetLanguage(typescript.GetLanguage())
-	return p
-}()
 
 var ErrTokenize = errors.New("failed to tokenize the input")
 
-func Tokenize(sourceCode []byte) (iter.Seq[*treesitter.Node], error) {
+func Tokenize(sourceCode []byte) error {
+	parser := treesitter.NewParser()
+	defer parser.Close()
+
+	err := parser.SetLanguage(treesitter.NewLanguage(treesitterTypescript.LanguageTypescript()))
+	if err != nil {
+		return errors.Join(ErrTokenize, err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	tree, err := parser.ParseCtx(ctx, nil, sourceCode)
-	if err != nil {
-		return nil, errors.Join(ErrTokenize, err)
+	tree := parser.ParseCtx(ctx, sourceCode, nil)
+	defer tree.Close()
+
+	cursor := tree.Walk()
+	defer cursor.Close()
+
+	for leaf := range treeLeafIter(cursor) {
+		start, end := leaf.ByteRange()
+		content := sourceCode[start:end]
+
+		slog.Info(
+			"node",
+			"kind", leaf.Kind(),
+			"content", content,
+		)
 	}
 
-	return TreeLeafIter(tree), nil
+	return nil
 }

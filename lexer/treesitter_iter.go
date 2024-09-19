@@ -3,42 +3,41 @@ package lexer
 import (
 	"iter"
 
-	treesitter "github.com/smacker/go-tree-sitter"
+	treesitter "github.com/tree-sitter/go-tree-sitter"
 )
 
-// TreeLeafIter convert the Treesitter node tree into an iterator
-func TreeLeafIter[n *treesitter.Node](t *treesitter.Tree) iter.Seq[n] {
+// treeLeafIter convert the Treesitter node tree into an iterator
+// cite: https://github.com/baz-scm/tree-sitter-traversal/blob/6c063b0e2accff29e35af6057484c033e0733cea/src/lib.rs#L142
+func treeLeafIter[n *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[n] {
 	return func(yield func(n) bool) {
-		node := t.RootNode()
-
 		for {
-			if node.ChildCount() != 0 {
-				node = node.Child(0)
+			if c.GotoFirstChild() {
 				continue
 			}
-			if sibling := node.NextSibling(); sibling != nil {
+
+			node := c.Node()
+			if c.GotoNextSibling() {
 				if node.ChildCount() == 0 && !yield(node) {
 					return
 				}
-
-				node = sibling
 				continue
 			}
 
 			for {
+				node := c.Node()
 				if node.ChildCount() == 0 && !yield(node) {
 					return
 				}
 
-				if node = node.Parent(); node == nil {
+				if !c.GotoParent() {
 					return
 				}
-				if sibling := node.NextSibling(); sibling != nil {
+
+				node = c.Node()
+				if c.GotoNextSibling() {
 					if node.ChildCount() == 0 && !yield(node) {
 						return
 					}
-
-					node = sibling
 					break
 				}
 			}
