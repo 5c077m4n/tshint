@@ -13,13 +13,15 @@ import (
 
 var ErrTokenize = errors.New("failed to tokenize the input")
 
-func Tokenize(sourceCode []byte) ([]token.Token, error) {
+func Tokenize(sourceCode []byte, chanToken chan<- token.Token) error {
+	defer close(chanToken)
+
 	parser := treesitter.NewParser()
 	defer parser.Close()
 
 	err := parser.SetLanguage(treesitter.NewLanguage(treesitterTypescript.LanguageTypescript()))
 	if err != nil {
-		return nil, errors.Join(ErrTokenize, err)
+		return errors.Join(ErrTokenize, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
@@ -31,7 +33,6 @@ func Tokenize(sourceCode []byte) ([]token.Token, error) {
 	cursor := tree.Walk()
 	defer cursor.Close()
 
-	tokenList := make([]token.Token, 0, 1024)
 	for node := range treesitterIter(cursor) {
 		t := token.From(node)
 		if t.IsError {
@@ -42,9 +43,9 @@ func Tokenize(sourceCode []byte) ([]token.Token, error) {
 		}
 
 		if node.ChildCount() == 0 {
-			tokenList = append(tokenList, token.From(node))
+			chanToken <- t
 		}
 	}
 
-	return tokenList, nil
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log/slog"
 	"tshint/lexer"
+	"tshint/lexer/token"
 )
 
 func main() {
@@ -13,12 +14,15 @@ func main() {
 
 	sourceCode := []byte(*source)
 
-	tokenList, err := lexer.Tokenize(sourceCode)
-	if err != nil {
-		panic(err)
-	}
+	chanToken := make(chan token.Token)
+	go func() {
+		err := lexer.Tokenize(sourceCode, chanToken)
+		if err != nil {
+			panic(err)
+		}
+	}()
 
-	for _, token := range tokenList {
+	for token := range chanToken {
 		slog.Info(
 			"Token",
 			"kind", token.Kind,
