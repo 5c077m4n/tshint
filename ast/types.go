@@ -1,12 +1,18 @@
 // Package ast type structs here
 package ast
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
-// TSType common functions for all types
-type TSType interface {
+// Node common functions for all types
+type Node interface {
 	IsNil() bool
 	Accept(Visitor) error
+	String() string
 }
 
 var ErrAccept = errors.New("failed to accept the AST node")
@@ -18,11 +24,11 @@ func wrapAcceptErr(err error) error {
 	return nil
 }
 
-type ByteRange = [2]uint
+type ByteRange [2]uint
 
-// Program tree root
+// Program tree root (should only be one at the top)
 type Program struct {
-	Children []TSType
+	Children []Node
 	ByteRange
 }
 
@@ -38,6 +44,7 @@ func (p *Program) Accept(v Visitor) error {
 
 // Number number type
 type Number struct {
+	Values []float32
 	ByteRange
 }
 
@@ -51,8 +58,24 @@ func (n *Number) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitNumber(n))
 }
 
+// String strigify
+func (n *Number) String() string {
+	if len(n.Values) == 0 {
+		return "number"
+	}
+
+	uniqueValues := uniques(n.Values)
+	values := make([]string, 0, len(uniqueValues))
+
+	for _, v := range uniqueValues {
+		values = append(values, strconv.FormatFloat(float64(v), 'g', -1, 32))
+	}
+	return strings.Join(values, " | ")
+}
+
 // Boolean bool type
 type Boolean struct {
+	Values []bool
 	ByteRange
 }
 
@@ -66,8 +89,28 @@ func (b *Boolean) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitBoolean(b))
 }
 
+// String strigify
+func (b *Boolean) String() string {
+	if len(b.Values) == 0 {
+		return "boolean"
+	}
+
+	values := make([]string, 0, len(b.Values))
+	for _, v := range b.Values {
+		if v {
+			values = append(values, "true")
+		} else {
+			values = append(values, "false")
+		}
+	}
+
+	values = uniques(values)
+	return strings.Join(values, " | ")
+}
+
 // String string type
 type String struct {
+	Values []string
 	ByteRange
 }
 
@@ -79,6 +122,15 @@ func (s *String) IsNil() bool {
 // Accept visitor fn
 func (s *String) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitString(s))
+}
+
+// String strigify
+func (s *String) String() string {
+	if len(s.Values) == 0 {
+		return "string"
+	}
+
+	return strings.Join(uniques(s.Values), " | ")
 }
 
 // Null `null` type
@@ -96,6 +148,11 @@ func (n *Null) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitNull(n))
 }
 
+// String strigify
+func (n *Null) String() string {
+	return "null"
+}
+
 // Undefined `undefined` type
 type Undefined struct {
 	ByteRange
@@ -109,6 +166,11 @@ func (u *Undefined) IsNil() bool {
 // Accept visitor fn
 func (u *Undefined) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitUndefined(u))
+}
+
+// String strigify
+func (u *Undefined) String() string {
+	return "undefined"
 }
 
 // Any `any` type
@@ -126,6 +188,11 @@ func (a *Any) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitAny(a))
 }
 
+// String strigify
+func (a *Any) String() string {
+	return "any"
+}
+
 // Unknown `unknown` type
 type Unknown struct {
 	ByteRange
@@ -139,6 +206,11 @@ func (u *Unknown) IsNil() bool {
 // Accept visitor fn
 func (u *Unknown) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitUnknown(u))
+}
+
+// String strigify
+func (u *Unknown) String() string {
+	return "unknown"
 }
 
 // Never `never` type
@@ -156,10 +228,15 @@ func (n *Never) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitNever(n))
 }
 
+// String strigify
+func (n *Never) String() string {
+	return "never"
+}
+
 // Union discriminated union type (`|`)
 type Union struct {
-	Left  TSType
-	Right TSType
+	Left  Node
+	Right Node
 	ByteRange
 }
 
@@ -173,10 +250,18 @@ func (u *Union) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitUnion(u))
 }
 
+// String strigify
+func (u *Union) String() string {
+	return strings.Join(
+		[]string{u.Left.String(), u.Right.String()},
+		" | ",
+	)
+}
+
 // Intersection type (`&`)
 type Intersection struct {
-	Left  TSType
-	Right TSType
+	Left  Node
+	Right Node
 	ByteRange
 }
 
@@ -190,10 +275,19 @@ func (i *Intersection) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitIntersection(i))
 }
 
+// String strigify
+func (i *Intersection) String() string {
+	return strings.Join(
+		[]string{i.Left.String(), i.Right.String()},
+		" & ",
+	)
+}
+
 // Function func type
 type Function struct {
-	Inputs  []TSType
-	Output  TSType
+	Name    string
+	Inputs  []Node
+	Output  Node
 	IsArrow bool
 	ByteRange
 }
@@ -206,4 +300,51 @@ func (f *Function) IsNil() bool {
 // Accept visitor fn
 func (f *Function) Accept(v Visitor) error {
 	return wrapAcceptErr(v.VisitFunction(f))
+}
+
+// String strigify
+func (f *Function) String() string {
+	if f.IsArrow {
+		return fmt.Sprintf(
+			"const %s = (%s): %s => { /*...*/ }",
+			f.Name, f.Inputs, f.Output,
+		)
+	}
+	return fmt.Sprintf(
+		"function %s(%s): %s { /*...*/ }",
+		f.Name, f.Inputs, f.Output,
+	)
+}
+
+// Identifier ident type
+type Identifier struct {
+	Name    string
+	IsConst bool
+	Type    Node
+	Value   Node
+	ByteRange
+}
+
+// IsNil nil check
+func (i *Identifier) IsNil() bool {
+	return i == nil
+}
+
+// Accept visitor fn
+func (i *Identifier) Accept(v Visitor) error {
+	return wrapAcceptErr(v.VisitIdentifier(i))
+}
+
+// String strigify
+func (i *Identifier) String() string {
+	initKW := "let"
+	if i.IsConst {
+		initKW = "const"
+	}
+
+	if i.Value == nil {
+		return fmt.Sprintf("%s %s: %s;", initKW, i.Name, i.Type)
+	}
+
+	return fmt.Sprintf("%s %s: %s = %s;", initKW, i.Name, i.Type, i.Value)
 }

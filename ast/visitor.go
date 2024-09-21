@@ -13,4 +13,5 @@ type Visitor interface {
 	VisitUnion(*Union) error
 	VisitIntersection(*Intersection) error
 	VisitFunction(*Function) error
+	VisitIdentifier(*Identifier) error
 }
