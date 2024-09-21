@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"log/slog"
 	"tshint/lexer"
 )
 
@@ -12,7 +13,16 @@ func main() {
 
 	sourceCode := []byte(*source)
 
-	if err := lexer.Tokenize(sourceCode); err != nil {
+	tokenList, err := lexer.Tokenize(sourceCode)
+	if err != nil {
 		panic(err)
+	}
+
+	for _, token := range tokenList {
+		slog.Info(
+			"Token",
+			"kind", token.Kind,
+			"content", token.Content(sourceCode),
+		)
 	}
 }

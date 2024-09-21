@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"time"
+	"tshint/lexer/token"
 
 	treesitter "github.com/tree-sitter/go-tree-sitter"
 	treesitterTypescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
@@ -12,13 +13,13 @@ import (
 
 var ErrTokenize = errors.New("failed to tokenize the input")
 
-func Tokenize(sourceCode []byte) error {
+func Tokenize(sourceCode []byte) ([]token.Token, error) {
 	parser := treesitter.NewParser()
 	defer parser.Close()
 
 	err := parser.SetLanguage(treesitter.NewLanguage(treesitterTypescript.LanguageTypescript()))
 	if err != nil {
-		return errors.Join(ErrTokenize, err)
+		return nil, errors.Join(ErrTokenize, err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
@@ -30,16 +31,20 @@ func Tokenize(sourceCode []byte) error {
 	cursor := tree.Walk()
 	defer cursor.Close()
 
-	for leaf := range treeLeafIter(cursor) {
-		start, end := leaf.ByteRange()
-		content := sourceCode[start:end]
+	tokenList := make([]token.Token, 0, 1024)
+	for node := range treesitterIter(cursor) {
+		t := token.From(node)
+		if t.IsError {
+			slog.Warn(
+				"Syntax error",
+				"token", t,
+			)
+		}
 
-		slog.Info(
-			"node",
-			"kind", leaf.Kind(),
-			"content", content,
-		)
+		if node.ChildCount() == 0 {
+			tokenList = append(tokenList, token.From(node))
+		}
 	}
 
-	return nil
+	return tokenList, nil
 }

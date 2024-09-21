@@ -18,14 +18,12 @@ func wrapAcceptErr(err error) error {
 	return nil
 }
 
-type Location struct {
-	Start [2]uint // [line, column]
-	End   [2]uint // [line, column]
-}
+type ByteRange = [2]uint
 
 // Program tree root
 type Program struct {
 	Children []TSType
+	ByteRange
 }
 
 // IsNil nil check
@@ -40,7 +38,7 @@ func (p *Program) Accept(v Visitor) error {
 
 // Number number type
 type Number struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -55,7 +53,7 @@ func (n *Number) Accept(v Visitor) error {
 
 // Boolean bool type
 type Boolean struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -70,7 +68,7 @@ func (b *Boolean) Accept(v Visitor) error {
 
 // String string type
 type String struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -85,7 +83,7 @@ func (s *String) Accept(v Visitor) error {
 
 // Null `null` type
 type Null struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -100,7 +98,7 @@ func (n *Null) Accept(v Visitor) error {
 
 // Undefined `undefined` type
 type Undefined struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -115,7 +113,7 @@ func (u *Undefined) Accept(v Visitor) error {
 
 // Any `any` type
 type Any struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -130,7 +128,7 @@ func (a *Any) Accept(v Visitor) error {
 
 // Unknown `unknown` type
 type Unknown struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -145,7 +143,7 @@ func (u *Unknown) Accept(v Visitor) error {
 
 // Never `never` type
 type Never struct {
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -162,7 +160,7 @@ func (n *Never) Accept(v Visitor) error {
 type Union struct {
 	Left  TSType
 	Right TSType
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -179,7 +177,7 @@ func (u *Union) Accept(v Visitor) error {
 type Intersection struct {
 	Left  TSType
 	Right TSType
-	Location
+	ByteRange
 }
 
 // IsNil nil check
@@ -197,7 +195,7 @@ type Function struct {
 	Inputs  []TSType
 	Output  TSType
 	IsArrow bool
-	Location
+	ByteRange
 }
 
 // IsNil nil check

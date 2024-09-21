@@ -6,9 +6,9 @@ import (
 	treesitter "github.com/tree-sitter/go-tree-sitter"
 )
 
-// treeLeafIter convert the Treesitter node tree into an iterator
+// treesitterIter convert the Treesitter node tree into an iterator
 // cite: https://github.com/baz-scm/tree-sitter-traversal/blob/6c063b0e2accff29e35af6057484c033e0733cea/src/lib.rs#L142
-func treeLeafIter[n *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[n] {
+func treesitterIter[n *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[n] {
 	return func(yield func(n) bool) {
 		for {
 			if c.GotoFirstChild() {
@@ -17,15 +17,14 @@ func treeLeafIter[n *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[n] {
 
 			node := c.Node()
 			if c.GotoNextSibling() {
-				if node.ChildCount() == 0 && !yield(node) {
+				if !yield(node) {
 					return
 				}
 				continue
 			}
 
 			for {
-				node := c.Node()
-				if node.ChildCount() == 0 && !yield(node) {
+				if !yield(c.Node()) {
 					return
 				}
 
@@ -33,9 +32,9 @@ func treeLeafIter[n *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[n] {
 					return
 				}
 
-				node = c.Node()
+				node := c.Node()
 				if c.GotoNextSibling() {
-					if node.ChildCount() == 0 && !yield(node) {
+					if !yield(node) {
 						return
 					}
 					break
