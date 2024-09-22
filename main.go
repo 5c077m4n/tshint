@@ -4,6 +4,7 @@ package main
 import (
 	"flag"
 	"log/slog"
+	"tshint/ast"
 	"tshint/lexer"
 	"tshint/lexer/token"
 )
@@ -22,11 +23,13 @@ func main() {
 		}
 	}()
 
-	for token := range chanToken {
-		slog.Info(
-			"Token",
-			"kind", token.Kind,
-			"content", token.Content(sourceCode),
-		)
+	tree, err := ast.From(sourceCode, chanToken)
+	if err != nil {
+		panic(err)
 	}
+
+	slog.Info(
+		"AST",
+		"tree", tree,
+	)
 }
