@@ -7,7 +7,5 @@ import (
 
 func uniques[Item cmp.Ordered, S ~[]Item](s S) S {
 	slices.Sort(s)
-	uniqItems := slices.Compact(s)
-
-	return uniqItems
+	return slices.Compact(s)
 }

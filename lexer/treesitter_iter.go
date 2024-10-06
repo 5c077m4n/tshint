@@ -7,7 +7,8 @@ import (
 )
 
 // treesitterIter convert the Treesitter node tree into an iterator
-// cite: https://github.com/baz-scm/tree-sitter-traversal/blob/6c063b0e2accff29e35af6057484c033e0733cea/src/lib.rs#L142
+//
+// origin: https://github.com/baz-scm/tree-sitter-traversal/blob/6c063b0e2accff29e35af6057484c033e0733cea/src/lib.rs#L142
 func treesitterIter[N *treesitter.Node](c *treesitter.TreeCursor) iter.Seq[N] {
 	return func(yield func(N) bool) {
 		for {
