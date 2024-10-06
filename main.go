@@ -4,9 +4,7 @@ package main
 import (
 	"flag"
 	"log/slog"
-	"tshint/ast"
-	"tshint/lexer"
-	"tshint/lexer/token"
+	"tshint/ast/ir0"
 )
 
 func main() {
@@ -15,21 +13,13 @@ func main() {
 
 	sourceCode := []byte(*source)
 
-	chanToken := make(chan token.Token)
-	go func() {
-		err := lexer.Tokenize(sourceCode, chanToken)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	tree, err := ast.From(sourceCode, chanToken)
+	tree, err := ir0.Build(sourceCode)
 	if err != nil {
 		panic(err)
 	}
 
 	slog.Info(
-		"AST",
-		"tree", tree,
+		"Tree",
+		"value", tree,
 	)
 }

@@ -1,4 +1,4 @@
-package ast
+package ir1
 
 import (
 	"cmp"

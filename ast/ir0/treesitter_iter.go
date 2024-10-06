@@ -1,4 +1,4 @@
-package lexer
+package ir0
 
 import (
 	"iter"

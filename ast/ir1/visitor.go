@@ -1,7 +1,7 @@
-package ast
+package ir1
 
 type Visitor interface {
-	VisitProgram(*Program) error
+	VisitProgram(*Block) error
 	VisitNumber(*Number) error
 	VisitBoolean(*Boolean) error
 	VisitString(*String) error
